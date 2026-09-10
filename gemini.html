@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAARIS • High-Altitude Adaptive Reliability & Intelligent System</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #060a12;
+            --bg-secondary: #0b1326;
+            --bg-card: #101b33;
+            --bg-card-hover: #162442;
+            --border-color: rgba(0, 210, 255, 0.15);
+            --border-color-strong: rgba(0, 210, 255, 0.4);
+            
+            --text-main: #f0f4f8;
+            --text-muted: #8a9bb0;
+            --text-dim: #50637a;
+
+            --accent-cyan: #00d2ff;
+            --accent-blue: #0066ff;
+            --accent-green: #00e676;
+            --accent-warning: #ffb300;
+            --accent-danger: #ff3d71;
+            
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            --glow-cyan: 0 0 15px rgba(0, 210, 255, 0.25);
+            --glow-danger: 0 0 15px rgba(ff, 61, 113, 0.25);
+        }
+
+        .light-theme {
+            --bg-primary: #f4f7fb;
+            --bg-secondary: #e6ecf5;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f8fafc;
+            --border-color: rgba(0, 102, 255, 0.15);
+            --border-color-strong: rgba(0, 102, 255, 0.4);
+            
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #94a3b8;
+
+            --accent-cyan: #0088cc;
+            --accent-blue: #0055ff;
+            --glow-cyan: 0 0 10px rgba(0, 136, 204, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-family: var(--font-sans);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5 {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+        }
+
+        /* Navigation Bar */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(6, 10, 18, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            font-size: 1.2rem;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .brand-text h1 {
+            font-size: 1.2rem;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+
+        .brand-text span {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--accent-cyan);
+            background: rgba(0, 210, 255, 0.08);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Controls / Toggles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 18px;
+        }
+
+        .switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155; transition: .3s; border-radius: 18px;
+        }
+
+        .slider:before {
+            position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+
+        input:checked + .slider { background-color: var(--accent-cyan); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* General Layout Elements */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border-color-strong);
+            padding: 0.6rem 1.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: var(--glow-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: rgba(ff, 61, 113, 0.15);
+            color: var(--accent-danger);
+            border-color: var(--accent-danger);
+        }
+
+        .btn-danger:hover {
+            background: var(--accent-danger);
+            color: #fff;
+            box-shadow: var(--glow-danger);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            background: rgba(0, 210, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-color);
+        }
+
+        .badge-warning {
+            background: rgba(255, 179, 0, 0.1);
+            color: var(--accent-warning);
+            border-color: rgba(255, 179, 0, 0.3);
+        }
+
+        .badge-danger {
+            background: rgba(255, 61, 113, 0.1);
+            color: var(--accent-danger);
+            border-color: rgba(255, 61, 113, 0.3);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Disclaimers */
+        .disclaimer-banner {
+            background: rgba(255, 179, 0, 0.08);
+            border: 1px solid rgba(255, 179, 0, 0.25);
+            color: var(--accent-warning);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Landing Page Styling */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            padding: 4rem 0;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            line-height: 1.1;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .hero-chamber {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color-strong);
+            border-radius: 12px;
+            height: 380px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .chamber-grid {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.4;
+        }
+
+        .chamber-motor {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px dashed var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: spin 8s linear infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        .chamber-motor-inner {
+            width: 80px;
+            height: 80px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            border: 2px solid var(--accent-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .chamber-overlay {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            right: 15px;
+            background: rgba(6, 10, 18, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            text-align: center;
+            z-index: 3;
+        }
+
+        .chamber-overlay-item .lbl {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            display: block;
+        }
+
+        .chamber-overlay-item .val {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* Challenge Cards */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .challenge-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-cyan);
+        }
+
+        .challenge-icon {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .impact-box {
+            margin-top: 1rem;
+            padding: 0.6rem;
+            background: rgba(0,0,0,0.2);
+            border-left: 2px solid var(--accent-cyan);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Horizontal Diagram */
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 3rem 0;
+            overflow-x: auto;
+            padding: 1rem 0;
+        }
+
+        .process-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 130px;
+            position: relative;
+        }
+
+        .process-arrow {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Technical Architecture Diagram CSS */
+        .arch-diagram {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .arch-node {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-blue);
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .arch-node.core {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 210, 255, 0.1);
+            color: var(--accent-cyan);
+            font-size: 1rem;
+        }
+
+        .arch-row {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .arch-line-v {
+            width: 2px;
+            height: 20px;
+            background: var(--accent-cyan);
+            opacity: 0.5;
+        }
+
+        /* Dashboard Metric Cards */
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.2rem;
+        }
+
+        .metric-val {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0.4rem 0;
+            color: var(--accent-cyan);
+        }
+
+        .metric-unit {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+
+        .status-dot.danger {
+            background: var(--accent-danger);
+            box-shadow: 0 0 8px var(--accent-danger);
+        }
+
+        /* Health Gauge Visual */
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .gauge-circle {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent-cyan) 0% 91%, var(--bg-secondary) 91% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .gauge-circle::before {
+            content: "";
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: var(--bg-card);
+        }
+
+        .gauge-text {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .gauge-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .gauge-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .data-table th, .data-table td {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: rgba(0,0,0,0.2);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.6rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+        }
+
+        /* Alerts List */
+        .alerts-stream {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--accent-cyan);
+        }
+
+        .alert-item.warning { border-left-color: var(--accent-warning); }
+        .alert-item.critical { border-left-color: var(--accent-danger); }
+
+        /* Component Block Visuals */
+        .comp-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.2rem;
+        }
+
+        .comp-title {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+            margin-bottom: 0.4rem;
+        }
+
+        .comp-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            margin-top: 4rem;
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            background: var(--bg-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .nav-container { flex-direction: column; gap: 1rem; }
+            nav ul { flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+            .grid-3, .grid-2, .grid-4 { grid-template-columns: 1fr; }
+            .hero-title { font-size: 2rem; }
+            .chamber-overlay { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header>
+        <div class="nav-container">
+            <div class="brand" onclick="switchPage('landing')">
+                <div class="brand-logo">H</div>
+                <div class="brand-text">
+                    <h1>HAARIS</h1>
+                    <span>iDEX Hardware • Smart Automation</span>
+                </div>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" id="nav-landing" class="active" onclick="switchPage('landing')">Overview</a></li>
+                    <li><a href="#" id="nav-dashboard" onclick="switchPage('dashboard')">Live Dashboard</a></li>
+                    <li><a href="#" id="nav-lab" onclick="switchPage('lab')">Test Lab</a></li>
+                    <li><a href="#" id="nav-comparison" onclick="switchPage('comparison')">Original vs Modified</a></li>
+                    <li><a href="#" id="nav-history" onclick="switchPage('history')">Test History</a></li>
+                    <li><a href="#" id="nav-architecture" onclick="switchPage('architecture')">Architecture</a></li>
+                    <li><a href="#" id="nav-about" onclick="switchPage('about')">About</a></li>
+                </ul>
+            </nav>
+            <div class="nav-actions">
+                <div class="toggle-container">
+                    <span>Demo Data</span>
+                    <label class="switch">
+                        <input type="checkbox" id="demoToggle" checked onchange="toggleDemoMode()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container">
+                    <span>Dark</span>
+                    <label class="switch">
+                        <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- DISCLAIMER BANNER -->
+        <div class="disclaimer-banner">
+            <span style="font-size:1.1rem;">⚠️</span>
+            <div>
+                <strong>Prototype / Hackathon Demonstration:</strong> This platform is a student engineering prototype inspired by Problem Statement 26049 (iDEX). All operational telemetry, environmental conditions, and health scores are simulated unless tied to physical hardware.
+            </div>
+        </div>
+
+        <!-- PAGE 1: LANDING PAGE -->
+        <section id="page-landing" class="page active">
+            <div class="hero">
+                <div>
+                    <span class="badge">iDEX • HARDWARE • SMART AUTOMATION</span>
+                    <h1 class="hero-title">Making Electronics Reliable at High Altitude.</h1>
+                    <p class="hero-sub">An intelligent environmental testing and protection platform designed to study and improve the reliability, efficiency, and lifespan of electrical and electronic equipment under simulated high-altitude conditions.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-primary" onclick="switchPage('lab')">Explore System</button>
+                        <button class="btn" onclick="switchPage('dashboard')">View Dashboard</button>
+                    </div>
+                </div>
+                <div class="hero-chamber">
+                    <div class="chamber-grid"></div>
+                    <div class="chamber-motor">
+                        <div class="chamber-motor-inner">12V MOTOR</div>
+                    </div>
+                    <div class="chamber-overlay">
+                        <div class="chamber-overlay-item">
+                            <span class="lbl">TEMP</span>
+                            <span class="val mono" id="hero-temp">-18.4 °C</span>
+                        </div>
+                        <div class="chamber-overlay-item">
+                            <span class="lbl">PRESSURE</span>
+                            <span class="val mono" id="hero-press">650 hPa</span>
+                        </div>
+                        <div class="chamber-overlay-item">
+                            <span class="lbl">RPM</span>
+                            <span class="val mono" id="hero-rpm">2310</span>
+                        </div>
+                        <div class="chamber-overlay-item">
+                            <span class="lbl">CURRENT</span>
+                            <span class="val mono" id="hero-curr">1.47 A</span>
+                        </div>
+                        <div class="chamber-overlay-item">
+                            <span class="lbl">HEALTH</span>
+                            <span class="val mono" id="hero-health">91%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: THE CHALLENGE -->
+            <div style="margin-top: 4rem;">
+                <h2>Why High Altitude Changes Everything</h2>
+                <p style="color: var(--text-muted); margin-top: 0.5rem;">High Altitude (HAA) and Super High Altitude Areas (SHAA) present critical environmental stressors that compromise conventional electrical/electronic hardware.</p>
+                
+                <div class="grid-3">
+                    <div class="challenge-card">
+                        <div class="challenge-icon">❄️</div>
+                        <h3>Subzero Temperatures</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Causes lubricant freezing, component embrittlement, and increased semiconductor thresholds.</p>
+                        <div class="impact-box">Engineering Impact: Increased starting torque, mechanical binding, structural fatigue.</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-icon">📉</div>
+                        <h3>Low Atmospheric Pressure</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Reduces air density, severely lowering dielectric breakdown voltage and insulating capacity.</p>
+                        <div class="impact-box">Engineering Impact: Corona discharge risks, internal arcing, insulation degradation.</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-icon">🌡️</div>
+                        <h3>Thermal Cycling</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Extreme diurnal variations lead to expansion and contraction stress across mechanical joints.</p>
+                        <div class="impact-box">Engineering Impact: Micro-fractures in PCB solder joints and seal failure.</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-icon">☀️</div>
+                        <h3>Intense Solar/UV Exposure</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">High UV radiation accelerates degradation of exposed polymers, wiring insulation, and enclosures.</p>
+                        <div class="impact-box">Engineering Impact: Material embrittlement and surface insulation loss.</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-icon">🌬️</div>
+                        <h3>Reduced Convective Cooling</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Rarified air removes significantly less heat per unit volume than sea-level atmosphere.</p>
+                        <div class="impact-box">Engineering Impact: Thermal runaway in power electronics despite subzero ambient air.</div>
+                    </div>
+                    <div class="challenge-card">
+                        <div class="challenge-icon">⚡</div>
+                        <h3>Electrical Drift</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Temperature-dependent resistance shifts affect current draw, efficiency, and timing circuits.</p>
+                        <div class="impact-box">Engineering Impact: Dynamic operational instability and uncalibrated sensor drift.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: OUR APPROACH -->
+            <div style="margin-top: 4rem;">
+                <h2>Sense → Analyze → Predict → Protect → Verify</h2>
+                <div class="process-flow">
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">01</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Environmental Conditions</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">02</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Sensors</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">03</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">ESP32 Controller</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">04</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Data Acquisition</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">05</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Analysis Engine</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">06</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Intelligent Decision</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">07</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Automatic Protection</div>
+                    </div>
+                    <div class="process-arrow">→</div>
+                    <div class="process-step">
+                        <div class="mono" style="font-weight:700; color:var(--accent-cyan);">08</div>
+                        <div style="font-size:0.8rem; margin-top:0.3rem;">Performance Verification</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 2: LIVE MONITORING DASHBOARD -->
+        <section id="page-dashboard" class="page">
+            <div class="card-header">
+                <div>
+                    <h2>HIGH-ALTITUDE EQUIPMENT MONITOR</h2>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Real-time Telemetry Stream (Simulated Demo Data)</span>
+                </div>
+                <div>
+                    <span class="status-dot" id="system-status-dot"></span>
+                    <span class="mono" style="font-size:0.85rem; margin-left:6px;" id="system-status-text">SYSTEM ONLINE</span>
+                </div>
+            </div>
+
+            <!-- Metric Cards Row -->
+            <div class="grid-4" style="margin-top:1rem;">
+                <div class="metric-card">
+                    <div class="card-title">Temperature</div>
+                    <div class="metric-val mono"><span id="dash-temp">-18.4</span><span class="metric-unit">°C</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);">Chamber Ambient</div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-title">Pressure</div>
+                    <div class="metric-val mono"><span id="dash-press">650</span><span class="metric-unit">hPa</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);">Simulated Altitude (~3,500m)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-title">Motor Speed</div>
+                    <div class="metric-val mono"><span id="dash-rpm">2310</span><span class="metric-unit">RPM</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);">Encoder Feedback</div>
+                </div>
+                <div class="metric-card">
+                    <div class="card-title">Electrical Power</div>
+                    <div class="metric-val mono"><span id="dash-power">17.79</span><span class="metric-unit">W</span></div>
+                    <div style="font-size:0.7rem; color:var(--text-dim);"><span id="dash-volt">12.1</span>V @ <span id="dash-curr">1.47</span>A</div>
+                </div>
+            </div>
+
+            <!-- Health Score & Alerts Row -->
+            <div class="grid-3" style="margin-top:1.5rem;">
+                <div class="card gauge-container">
+                    <div class="card-title" style="margin-bottom:1rem;">Equipment Health Score</div>
+                    <div class="gauge-circle" id="health-gauge">
+                        <div class="gauge-text">
+                            <div class="gauge-value mono" id="dash-health">91%</div>
+                            <div class="gauge-label">NOMINAL</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); margin-top:1rem; text-align:center;">
+                        Prototype metric evaluated via algorithmic weighting of Temp, Power Drift, and RPM Stability.
+                    </div>
+                </div>
+
+                <div class="card" style="grid-column: span 2;">
+                    <div class="card-header">
+                        <div class="card-title">Environmental & Equipment Alerts</div>
+                        <span class="badge" id="alert-count-badge">3 Events Active</span>
+                    </div>
+                    <div class="alerts-stream" id="alerts-stream">
+                        <div class="alert-item">
+                            <div>
+                                <strong>NORMAL:</strong> Thermal compensation heater inactive. Temperature stable.
+                            </div>
+                            <span class="mono" style="font-size:0.7rem; color:var(--text-dim);">Just now</span>
+                        </div>
+                        <div class="alert-item warning">
+                            <div>
+                                <strong>WARNING:</strong> Motor current elevated by +8.4% due to cold lubricant viscosity.
+                            </div>
+                            <span class="mono" style="font-size:0.7rem; color:var(--text-dim);">2m ago</span>
+                        </div>
+                        <div class="alert-item">
+                            <div>
+                                <strong>NORMAL:</strong> Atmospheric pressure setpoint aligned with 650 hPa profile.
+                            </div>
+                            <span class="mono" style="font-size:0.7rem; color:var(--text-dim);">5m ago</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Charts -->
+            <div style="margin-top:2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h3>Real-Time Performance Analytics</h3>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="setChartRange(10)">10s</button>
+                        <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="setChartRange(30)">30s</button>
+                        <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="setChartRange(60)">60s</button>
+                    </div>
+                </div>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">Temperature (°C) & Pressure (hPa)</div>
+                        <canvas id="chart-env" height="200"></canvas>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Motor Speed (RPM) & Current (A)</div>
+                        <canvas id="chart-motor" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: TEST LAB -->
+        <section id="page-lab" class="page">
+            <div class="card-header">
+                <div>
+                    <h2>Environmental Test Laboratory</h2>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Simulated Test Control Interface</span>
+                </div>
+            </div>
+
+            <div class="grid-3" style="margin-top:1.5rem;">
+                <!-- Control Panel -->
+                <div class="card">
+                    <div class="card-title" style="margin-bottom:1rem;">Test Parameters</div>
+                    
+                    <div class="form-group">
+                        <label>Target Temperature (°C): <span id="lab-val-temp" class="mono">-20</span></label>
+                        <input type="range" class="form-control" id="lab-input-temp" min="-40" max="25" value="-20" oninput="updateLabInputs()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Target Pressure (hPa): <span id="lab-val-press" class="mono">650</span></label>
+                        <input type="range" class="form-control" id="lab-input-press" min="400" max="1013" value="650" oninput="updateLabInputs()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Target Motor Speed (RPM): <span id="lab-val-rpm" class="mono">2300</span></label>
+                        <input type="range" class="form-control" id="lab-input-rpm" min="500" max="3500" step="50" value="2300" oninput="updateLabInputs()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Test Duration (Minutes): <span id="lab-val-dur" class="mono">10</span></label>
+                        <input type="range" class="form-control" id="lab-input-dur" min="1" max="60" value="10" oninput="updateLabInputs()">
+                    </div>
+
+                    <div style="display:flex; gap:0.5rem; margin-top:1.5rem;">
+                        <button class="btn btn-primary" id="btn-start-test" style="flex:1;" onclick="startTest()">START TEST</button>
+                        <button class="btn btn-danger" id="btn-stop-test" style="flex:1;" onclick="stopTest()" disabled>STOP</button>
+                        <button class="btn" onclick="resetTest()">RESET</button>
+                    </div>
+                </div>
+
+                <!-- Simulation Visualizer -->
+                <div class="card" style="grid-column: span 2; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div>
+                        <div class="card-header">
+                            <div class="card-title">Live Test Progress</div>
+                            <span class="badge" id="lab-status-badge">READY</span>
+                        </div>
+                        
+                        <div style="margin:1.5rem 0;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:0.4rem;">
+                                <span>Execution Progress</span>
+                                <span class="mono" id="lab-progress-text">0%</span>
+                            </div>
+                            <div style="width:100%; height:8px; background:var(--bg-secondary); border-radius:4px; overflow:hidden;">
+                                <div id="lab-progress-bar" style="width:0%; height:100%; background:var(--accent-cyan); transition:width 0.3s;"></div>
+                            </div>
+                        </div>
+
+                        <div class="grid-3" style="margin-top:2rem;">
+                            <div style="background:var(--bg-secondary); padding:1rem; border-radius:6px; text-align:center;">
+                                <div style="font-size:0.7rem; color:var(--text-dim);">CALCULATED POWER</div>
+                                <div class="mono" style="font-size:1.4rem; font-weight:700; color:var(--accent-cyan);" id="lab-calc-power">0.0 W</div>
+                            </div>
+                            <div style="background:var(--bg-secondary); padding:1rem; border-radius:6px; text-align:center;">
+                                <div style="font-size:0.7rem; color:var(--text-dim);">ESTIMATED DRAG</div>
+                                <div class="mono" style="font-size:1.4rem; font-weight:700; color:var(--accent-warning);" id="lab-calc-drag">+0.0%</div>
+                            </div>
+                            <div style="background:var(--bg-secondary); padding:1rem; border-radius:6px; text-align:center;">
+                                <div style="font-size:0.7rem; color:var(--text-dim);">HEALTH INDEX</div>
+                                <div class="mono" style="font-size:1.4rem; font-weight:700; color:var(--accent-green);" id="lab-calc-health">100%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="padding:1rem; background:rgba(0,0,0,0.2); border-radius:6px; font-size:0.75rem; color:var(--text-muted); margin-top:1rem;">
+                        <strong>Physical Degradation Model Active:</strong> Decreasing temperature models fluid viscosity drag on motor bearings, increasing current draw. Decreasing pressure reduces thermal dissipation capabilities.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: ORIGINAL VS MODIFIED -->
+        <section id="page-comparison" class="page">
+            <div class="card-header">
+                <div>
+                    <h2>Does the Modification Actually Improve Reliability?</h2>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Comparative Analysis: Standard Commercial Off-The-Shelf (COTS) vs. HAARIS-Modified Prototype</span>
+                </div>
+                <span class="badge">Illustrative Prototype Data</span>
+            </div>
+
+            <div class="grid-2" style="margin-top:1.5rem;">
+                <div class="card" style="border-left: 4px solid var(--accent-danger);">
+                    <div class="card-title" style="color:var(--accent-danger);">Unmodified COTS Equipment</div>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem;">Baseline motor and power setup without active thermal management or adaptive drive control.</p>
+                    
+                    <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>RPM Stability at -20°C</span>
+                                <span class="mono">91.8%</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:var(--bg-secondary); border-radius:3px; margin-top:0.2rem;">
+                                <div style="width:91.8%; height:100%; background:var(--accent-danger);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>Current Consumption</span>
+                                <span class="mono">1.72 A</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:var(--bg-secondary); border-radius:3px; margin-top:0.2rem;">
+                                <div style="width:85%; height:100%; background:var(--accent-danger);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>Fault Events (per 10-min test)</span>
+                                <span class="mono">3 Events</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-left: 4px solid var(--accent-green);">
+                    <div class="card-title" style="color:var(--accent-green);">HAARIS Modified System</div>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.5rem;">Integrated closed-loop preheating, low-friction synthetic lubrication, and dynamic PWM control.</p>
+                    
+                    <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>RPM Stability at -20°C</span>
+                                <span class="mono">97.4% (+5.6%)</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:var(--bg-secondary); border-radius:3px; margin-top:0.2rem;">
+                                <div style="width:97.4%; height:100%; background:var(--accent-green);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>Current Consumption</span>
+                                <span class="mono">1.49 A (-13.3%)</span>
+                            </div>
+                            <div style="width:100%; height:6px; background:var(--bg-secondary); border-radius:3px; margin-top:0.2rem;">
+                                <div style="width:70%; height:100%; background:var(--accent-green);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                                <span>Fault Events (per 10-min test)</span>
+                                <span class="mono">0 Events (-100%)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Comparison Table -->
+            <div class="card" style="margin-top:1.5rem;">
+                <div class="card-title">Comprehensive Engineering Metrics</div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Original Equipment</th>
+                            <th>Modified System</th>
+                            <th>Delta / Improvement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>RPM Deviation (-20°C, 650 hPa)</td>
+                            <td class="mono">± 180 RPM</td>
+                            <td class="mono">± 35 RPM</td>
+                            <td class="mono" style="color:var(--accent-green);">80.5% Variance Reduction</td>
+                        </tr>
+                        <tr>
+                            <td>Peak Current Draw (Cold Start)</td>
+                            <td class="mono">2.10 A</td>
+                            <td class="mono">1.55 A</td>
+                            <td class="mono" style="color:var(--accent-green);">-26.1% Inrush Reduction</td>
+                        </tr>
+                        <tr>
+                            <td>Operating Power Loss</td>
+                            <td class="mono">20.8 W</td>
+                            <td class="mono">17.8 W</td>
+                            <td class="mono" style="color:var(--accent-green);">-14.4% Power Saved</td>
+                        </tr>
+                        <tr>
+                            <td>Component Thermal Rise Delta</td>
+                            <td class="mono">+28.5 °C</td>
+                            <td class="mono">+12.2 °C</td>
+                            <td class="mono" style="color:var(--accent-green);">Better Dissipation Control</td>
+                        </tr>
+                        <tr>
+                            <td>Operating Lifespan Expectancy</td>
+                            <td class="mono">Degraded (-40%)</td>
+                            <td class="mono">Nominal (Baseline)</td>
+                            <td class="mono" style="color:var(--accent-green);">Preserved Lifespan</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PAGE 5: TEST HISTORY -->
+        <section id="page-history" class="page">
+            <div class="card-header">
+                <div>
+                    <h2>Logged Test History</h2>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">Historical Chamber Run Records (Simulated Data)</span>
+                </div>
+                <button class="btn btn-primary" onclick="exportCSV()">Export CSV</button>
+            </div>
+
+            <div class="card" style="margin-top:1rem;">
+                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                    <input type="text" id="search-history" class="form-control" placeholder="Search Test ID or Result..." onkeyup="filterHistory()">
+                </div>
+
+                <table class="data-table" id="table-history">
+                    <thead>
+                        <tr>
+                            <th>Test ID</th>
+                            <th>Date</th>
+                            <th>Min Temp</th>
+                            <th>Min Pressure</th>
+                            <th>Avg RPM</th>
+                            <th>Max Current</th>
+                            <th>Power</th>
+                            <th>Health Score</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td class="mono">TEST-001</td>
+                            <td>10 Sep 2026</td>
+                            <td class="mono">-10 °C</td>
+                            <td class="mono">700 hPa</td>
+                            <td class="mono">2380 RPM</td>
+                            <td class="mono">1.52 A</td>
+                            <td class="mono">18.4 W</td>
+                            <td class="mono">94%</td>
+                            <td><span class="badge">PASS</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">TEST-002</td>
+                            <td>10 Sep 2026</td>
+                            <td class="mono">-15 °C</td>
+                            <td class="mono">680 hPa</td>
+                            <td class="mono">2310 RPM</td>
+                            <td class="mono">1.61 A</td>
+                            <td class="mono">19.3 W</td>
+                            <td class="mono">89%</td>
+                            <td><span class="badge badge-warning">WARNING</span></td>
+                        </tr>
+                        <tr>
+                            <td class="mono">TEST-003</td>
+                            <td>10 Sep 2026</td>
+                            <td class="mono">-20 °C</td>
+                            <td class="mono">650 hPa</td>
+                            <td class="mono">2180 RPM</td>
+                            <td class="mono">1.78 A</td>
+                            <td class="mono">21.2 W</td>
+                            <td class="mono">76%</td>
+                            <td><span class="badge badge-danger">DEGRADED</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PAGE 6: ARCHITECTURE & HARDWARE/SOFTWARE -->
+        <section id="page-architecture" class="page">
+            <h2>Technical Architecture & Components</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">System schematic breakdown for sensor data collection and automatic control loops.</p>
+
+            <!-- Technical Block Diagram -->
+            <div class="arch-diagram">
+                <div class="arch-node">ENVIRONMENT CHAMBER (Subzero / Low Pressure)</div>
+                <div class="arch-line-v"></div>
+                <div class="arch-row">
+                    <div class="arch-node">Temperature Sensor (DS18B20/BMP280)</div>
+                    <div class="arch-node">Pressure Sensor (BMP280)</div>
+                    <div class="arch-node">UV/Irradiance Sensor</div>
+                </div>
+                <div class="arch-line-v"></div>
+                <div class="arch-node core">ESP32 CONTROLLER (Data Acquisition & PWM)</div>
+                <div class="arch-line-v"></div>
+                <div class="arch-row">
+                    <div class="arch-node">Voltage Sensor</div>
+                    <div class="arch-node">Current Sensor (ACS712)</div>
+                    <div class="arch-node">RPM Encoder</div>
+                </div>
+                <div class="arch-line-v"></div>
+                <div class="arch-node">DATA PROCESSING & ANALYTICS ENGINE</div>
+                <div class="arch-line-v"></div>
+                <div class="arch-row">
+                    <div class="arch-node" style="border-color:var(--accent-warning);">Heating Element Driver</div>
+                    <div class="arch-node" style="border-color:var(--accent-cyan);">Motor Speed Controller</div>
+                    <div class="arch-node" style="border-color:var(--accent-danger);">Safety Cutoff Relay</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:3rem; margin-bottom:1rem;">Hardware & Software Components</h3>
+            <div class="grid-3">
+                <div class="comp-card">
+                    <div class="comp-title">ESP32 Microcontroller</div>
+                    <div class="comp-meta">Role: Main Controller</div>
+                    <p style="font-size:0.8rem; color:var(--text-muted);">Handles real-time sensor polling, PWM output generation, closed-loop control algorithms, and Wi-Fi/Serial telemetry output.</p>
+                </div>
+                <div class="comp-card">
+                    <div class="comp-title">BMP280 & ACS712 Sensors</div>
+                    <div class="comp-meta">Role: Environmental & Electrical Sensing</div>
+                    <p style="font-size:0.8rem; color:var(--text-muted);">Monitors atmospheric pressure, ambient temperature, and motor current draw with high temporal resolution.</p>
+                </div>
+                <div class="comp-card">
+                    <div class="comp-title">Analytics Software Pipeline</div>
+                    <div class="comp-meta">Role: Python / Web Interface</div>
+                    <p style="font-size:0.8rem; color:var(--text-muted);">Processes telemetry streams, executes fault detection heuristics, updates dynamic charts, and logs comparative history.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 7: ABOUT THE PROJECT -->
+        <section id="page-about" class="page">
+            <h2>About Project HAARIS</h2>
+            <div class="card" style="margin-top:1.5rem;">
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Problem Statement ID</label>
+                            <div class="mono" style="font-size:1.1rem; font-weight:700;">26049</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Organization</label>
+                            <div style="font-size:1rem; font-weight:600;">DRDO (Defence Research and Development Organisation)</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Department / Nodal</label>
+                            <div style="font-size:1rem; font-weight:600;">Department of Defence Production / iDEX</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <div><span class="badge">Hardware</span></div>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label>Theme</label>
+                            <div><span class="badge">Smart Automation</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border-color);">
+                    <h3>Project Objective</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-top:0.5rem;">
+                        "To develop a prototype platform capable of monitoring and evaluating electrical/electronic equipment under simulated high-altitude environmental conditions and demonstrating intelligent methods for improving reliability, efficiency, and operational lifespan."
+                    </p>
+                </div>
+
+                <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border-color);">
+                    <h3>Official Disclaimer</h3>
+                    <p style="color:var(--text-dim); font-size:0.8rem;">
+                        This website represents a student/hackathon prototype developed for educational and demonstration purposes inspired by iDEX Problem Statement 26049. Environmental values, performance metrics, and equipment behavior displayed in demonstration screens are simulated unless explicitly identified as experimentally measured on physical hardware. This project is not certified by or formally deployed by DRDO or military authorities.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>HAARIS • High-Altitude Adaptive Reliability & Intelligent System</p>
+        <p style="margin-top:0.3rem; font-size:0.7rem;">Student / Hackathon Demonstration Platform • Problem Statement ID: 26049</p>
+    </footer>
+
+    <!-- JavaScript Engine -->
+    <script>
+        // System State
+        let state = {
+            currentPage: 'landing',
+            demoMode: true,
+            theme: 'dark',
+            temp: -18.4,
+            pressure: 650,
+            rpm: 2310,
+            voltage: 12.1,
+            current: 1.47,
+            health: 91,
+            testRunning: false,
+            testProgress: 0,
+            testInterval: null,
+            chartRange: 10
+        };
+
+        // Telemetry History Array for Charts
+        let timeLabels = [];
+        let tempData = [];
+        let pressData = [];
+        let rpmData = [];
+        let currData = [];
+
+        // Chart Instances
+        let envChart, motorChart;
+
+        // Initialize Page
+        window.onload = function() {
+            initCharts();
+            startTelemetryLoop();
+        };
+
+        // Navigation Switcher
+        function switchPage(pageId) {
+            state.currentPage = pageId;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            const navLink = document.getElementById(`nav-${pageId}`);
+            if(navLink) navLink.classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Theme Toggle
+        function toggleTheme() {
+            const isLight = document.getElementById('themeToggle').checked;
+            if (isLight) {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+        }
+
+        // Demo Mode Toggle
+        function toggleDemoMode() {
+            state.demoMode = document.getElementById('demoToggle').checked;
+        }
+
+        // Telemetry Loop (Updates Data Smoothly)
+        function startTelemetryLoop() {
+            setInterval(() => {
+                if (state.demoMode && !state.testRunning) {
+                    // Gradual drift simulations
+                    state.temp += (Math.random() - 0.5) * 0.2;
+                    state.pressure += (Math.random() - 0.5) * 0.8;
+                    
+                    // Physical relationship: colder temp -> higher current (drag)
+                    const tempFactor = (0 - state.temp) * 0.01;
+                    state.current = 1.35 + tempFactor + (Math.random() - 0.5) * 0.03;
+                    state.rpm = 2350 - (tempFactor * 20) + (Math.random() - 0.5) * 10;
+                    
+                    // Health calculation based on threshold deviations
+                    let healthCalc = 100 - (Math.abs(state.temp) * 0.3) - ((1.7 - state.current) * 10);
+                    state.health = Math.min(100, Math.max(50, Math.round(healthCalc)));
+                }
+
+                updateUI();
+                updateCharts();
+            }, 1000);
+        }
+
+        // UI Refresh
+        function updateUI() {
+            // Power Calculation
+            const power = (state.voltage * state.current).toFixed(2);
+
+            // Hero Overlay
+            document.getElementById('hero-temp').innerText = `${state.temp.toFixed(1)} °C`;
+            document.getElementById('hero-press').innerText = `${Math.round(state.pressure)} hPa`;
+            document.getElementById('hero-rpm').innerText = Math.round(state.rpm);
+            document.getElementById('hero-curr').innerText = `${state.current.toFixed(2)} A`;
+            document.getElementById('hero-health').innerText = `${state.health}%`;
+
+            // Dashboard Metrics
+            document.getElementById('dash-temp').innerText = state.temp.toFixed(1);
+            document.getElementById('dash-press').innerText = Math.round(state.pressure);
+            document.getElementById('dash-rpm').innerText = Math.round(state.rpm);
+            document.getElementById('dash-power').innerText = power;
+            document.getElementById('dash-volt').innerText = state.vo
