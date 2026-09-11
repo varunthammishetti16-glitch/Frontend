@@ -1531,9 +1531,226 @@
             document.getElementById('hero-curr').innerText = `${state.current.toFixed(2)} A`;
             document.getElementById('hero-health').innerText = `${state.health}%`;
 
+           
             // Dashboard Metrics
             document.getElementById('dash-temp').innerText = state.temp.toFixed(1);
             document.getElementById('dash-press').innerText = Math.round(state.pressure);
             document.getElementById('dash-rpm').innerText = Math.round(state.rpm);
             document.getElementById('dash-power').innerText = power;
-            document.getElementById('dash-volt').innerText = state.vo
+            document.getElementById('dash-volt').innerText = state.voltage.toFixed(1);
+            document.getElementById('dash-curr').innerText = state.current.toFixed(2);
+            document.getElementById('dash-health').innerText = `${state.health}%`;
+
+            // Gauge CSS Gradient Update
+            const gauge = document.getElementById('health-gauge');
+            if(gauge) {
+                gauge.style.background = `conic-gradient(var(--accent-cyan) 0% ${state.health}%, var(--bg-secondary) ${state.health}% 100%)`;
+            }
+
+            // Dynamic Alerts Stream
+            const alertBox = document.getElementById('alerts-stream');
+            if (state.current > 1.65) {
+                document.getElementById('system-status-dot').className = "status-dot danger";
+                document.getElementById('system-status-text').innerText = "HIGH CURRENT DRAW";
+            } else {
+                document.getElementById('system-status-dot').className = "status-dot";
+                document.getElementById('system-status-text').innerText = "SYSTEM ONLINE";
+            }
+        }
+
+        // Initialize Chart.js
+        function initCharts() {
+            const ctxEnv = document.getElementById('chart-env').getContext('2d');
+            const ctxMotor = document.getElementById('chart-motor').getContext('2d');
+
+            const chartConfig = {
+                type: 'line',
+                options: {
+                    responsive: true,
+                    animation: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8a9bb0' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8a9bb0' } }
+                    },
+                    plugins: { legend: { labels: { color: '#8a9bb0' } } }
+                }
+            };
+
+            envChart = new Chart(ctxEnv, {
+                ...chartConfig,
+                data: {
+                    labels: timeLabels,
+                    datasets: [
+                        { label: 'Temp (°C)', data: tempData, borderColor: '#00d2ff', tension: 0.3, yAxisID: 'y' },
+                        { label: 'Pressure (hPa)', data: pressData, borderColor: '#0066ff', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    ...chartConfig.options,
+                    scales: {
+                        ...chartConfig.options.scales,
+                        y1: { position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+
+            motorChart = new Chart(ctxMotor, {
+                ...chartConfig,
+                data: {
+                    labels: timeLabels,
+                    datasets: [
+                        { label: 'RPM', data: rpmData, borderColor: '#00e676', tension: 0.3, yAxisID: 'y' },
+                        { label: 'Current (A)', data: currData, borderColor: '#ffb300', tension: 0.3, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    ...chartConfig.options,
+                    scales: {
+                        ...chartConfig.options.scales,
+                        y1: { position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        // Push Telemetry Data to Charts
+        function updateCharts() {
+            const now = new Date().toLocaleTimeString();
+            
+            if (timeLabels.length > 20) {
+                timeLabels.shift();
+                tempData.shift();
+                pressData.shift();
+                rpmData.shift();
+                currData.shift();
+            }
+
+            timeLabels.push(now);
+            tempData.push(state.temp.toFixed(1));
+            pressData.push(Math.round(state.pressure));
+            rpmData.push(Math.round(state.rpm));
+            currData.push(state.current.toFixed(2));
+
+            envChart.update();
+            motorChart.update();
+        }
+
+        function setChartRange(seconds) {
+            state.chartRange = seconds;
+        }
+
+        // Test Lab Logic
+        function updateLabInputs() {
+            document.getElementById('lab-val-temp').innerText = document.getElementById('lab-input-temp').value;
+            document.getElementById('lab-val-press').innerText = document.getElementById('lab-input-press').value;
+            document.getElementById('lab-val-rpm').innerText = document.getElementById('lab-input-rpm').value;
+            document.getElementById('lab-val-dur').innerText = document.getElementById('lab-input-dur').value;
+        }
+
+        function startTest() {
+            state.testRunning = true;
+            state.testProgress = 0;
+            
+            document.getElementById('btn-start-test').disabled = true;
+            document.getElementById('btn-stop-test').disabled = false;
+            document.getElementById('lab-status-badge').innerText = "RUNNING";
+            document.getElementById('lab-status-badge').className = "badge badge-warning";
+
+            const targetTemp = parseFloat(document.getElementById('lab-input-temp').value);
+            const targetPress = parseFloat(document.getElementById('lab-input-press').value);
+            const targetRPM = parseFloat(document.getElementById('lab-input-rpm').value);
+
+            state.testInterval = setInterval(() => {
+                state.testProgress += 2;
+                document.getElementById('lab-progress-bar').style.width = `${state.testProgress}%`;
+                document.getElementById('lab-progress-text').innerText = `${state.testProgress}%`;
+
+                // Drive state towards target parameters
+                state.temp += (targetTemp - state.temp) * 0.1;
+                state.pressure += (targetPress - state.pressure) * 0.1;
+                state.rpm += (targetRPM - state.rpm) * 0.1;
+
+                // Physics feedback calculations
+                const coldDragPercent = Math.max(0, (0 - state.temp) * 1.2);
+                document.getElementById('lab-calc-drag').innerText = `+${coldDragPercent.toFixed(1)}%`;
+                
+                const calculatedPower = (12.1 * (1.3 + coldDragPercent * 0.02)).toFixed(1);
+                document.getElementById('lab-calc-power').innerText = `${calculatedPower} W`;
+
+                if (state.testProgress >= 100) {
+                    stopTest();
+                    addTestRecord(targetTemp, targetPress, targetRPM, calculatedPower);
+                }
+            }, 300);
+        }
+
+        function stopTest() {
+            state.testRunning = false;
+            clearInterval(state.testInterval);
+            document.getElementById('btn-start-test').disabled = false;
+            document.getElementById('btn-stop-test').disabled = true;
+            document.getElementById('lab-status-badge').innerText = "COMPLETED";
+            document.getElementById('lab-status-badge').className = "badge";
+        }
+
+        function resetTest() {
+            stopTest();
+            state.testProgress = 0;
+            document.getElementById('lab-progress-bar').style.width = "0%";
+            document.getElementById('lab-progress-text').innerText = "0%";
+            document.getElementById('lab-status-badge').innerText = "READY";
+        }
+
+        // Log Test Results to History
+        function addTestRecord(t, p, rpm, pwr) {
+            const tbody = document.getElementById('history-tbody');
+            const rowCount = tbody.rows.length + 1;
+            const newRow = tbody.insertRow(0);
+            
+            newRow.innerHTML = `
+                <td class="mono">TEST-00${rowCount}</td>
+                <td>${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                <td class="mono">${t.toFixed(0)} °C</td>
+                <td class="mono">${p.toFixed(0)} hPa</td>
+                <td class="mono">${rpm.toFixed(0)} RPM</td>
+                <td class="mono">${(pwr/12.1).toFixed(2)} A</td>
+                <td class="mono">${pwr} W</td>
+                <td class="mono">88%</td>
+                <td><span class="badge">PASS</span></td>
+            `;
+        }
+
+        // Table Filtering
+        function filterHistory() {
+            const query = document.getElementById('search-history').value.toLowerCase();
+            const rows = document.querySelectorAll('#history-tbody tr');
+            
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        // CSV Export Helper
+        function exportCSV() {
+            let csv = "Test ID,Date,Min Temp,Min Pressure,Avg RPM,Max Current,Power,Health Score,Result\n";
+            const rows = document.querySelectorAll('#history-tbody tr');
+            
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                const rowData = Array.from(cols).map(c => `"${c.innerText.replace(/"/g, '""')}"`).join(',');
+                csv += rowData + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'HAARIS_Test_History.csv');
+            a.click();
+        }
+    </script>
+</body>
+</html>
+            
+            
