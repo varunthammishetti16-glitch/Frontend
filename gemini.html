@@ -1497,28 +1497,55 @@
         }
 
         // Telemetry Loop (Updates Data Smoothly)
-        function startTelemetryLoop() {
-            setInterval(() => {
-                if (state.demoMode && !state.testRunning) {
-                    // Gradual drift simulations
-                    state.temp += (Math.random() - 0.5) * 0.2;
-                    state.pressure += (Math.random() - 0.5) * 0.8;
-                    
-                    // Physical relationship: colder temp -> higher current (drag)
-                    const tempFactor = (0 - state.temp) * 0.01;
-                    state.current = 1.35 + tempFactor + (Math.random() - 0.5) * 0.03;
-                    state.rpm = 2350 - (tempFactor * 20) + (Math.random() - 0.5) * 10;
-                    
-                    // Health calculation based on threshold deviations
-                    let healthCalc = 100 - (Math.abs(state.temp) * 0.3) - ((1.7 - state.current) * 10);
-                    state.health = Math.min(100, Math.max(50, Math.round(healthCalc)));
-                }
+        async function fetchTelemetry() {
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/telemetry");
 
-                updateUI();
-                updateCharts();
-            }, 1000);
+        if (!response.ok) {
+            throw new Error("Failed to fetch telemetry");
         }
 
+        const data = await response.json();
+
+        // Get data from FastAPI
+        state.temp = data.temperature;
+        state.pressure = data.pressure;
+        state.voltage = data.battery_voltage;
+        state.rpm = data.rpm ?? state.rpm;
+        
+        // Current is not provided by our current API,
+        // so keep the existing value for now.
+        state.current = data.current ?? state.current;
+
+        // Temporary health calculation
+        let healthCalc =
+            100 -
+            (Math.abs(state.temp) * 0.3) -
+            ((1.7 - state.current) * 10);
+
+        state.health = Math.min(
+            100,
+            Math.max(50, Math.round(healthCalc))
+        );
+
+        updateUI();
+        updateCharts();
+
+    } catch (error) {
+        console.error("Telemetry error:", error);
+    }
+}
+
+
+function startTelemetryLoop() {
+    fetchTelemetry();
+
+    setInterval(() => {
+        if (!state.testRunning) {
+            fetchTelemetry();
+        }
+    }, 1000);
+}
         // UI Refresh
         function updateUI() {
             // Power Calculation
