@@ -793,7 +793,7 @@
                 <div class="toggle-container">
                     <span>Demo Data</span>
                     <label class="switch">
-                        <input type="checkbox" id="demoToggle" checked onchange="toggleDemoMode()">
+                        <input type="checkbox" id="demoToggle" onchange="toggleDemoMode()">
                         <span class="slider"></span>
                     </label>
                 </div>
@@ -1447,7 +1447,7 @@ let state = {
     currentPage: 'landing',
 
     // Data mode
-    demoMode: true,
+    demoMode: false,
 
     // UI
     theme: 'dark',
@@ -1474,8 +1474,7 @@ let state = {
 
 // Temporary backend address.
 // We will change this when your actual backend is ready.
-const API_URL = "http://localhost:5000/api/telemetry";
-
+const API_URL = "http://127.0.0.1:8000/api/telemetry";
 
 // ==========================================
 // TELEMETRY HISTORY FOR CHARTS
@@ -1789,43 +1788,83 @@ function connectToBackend() {
 // FETCH TELEMETRY FROM BACKEND
 // ==========================================
 
-async function fetchTelemetry() {
-
+  async function fetchTelemetry() {
     try {
 
-        const response =
-            await fetch(API_URL);
-
+        const response = await fetch(
+            "http://127.0.0.1:8000/api/telemetry"
+        );
 
         if (!response.ok) {
-
-            throw new Error(
-                `HTTP error: ${response.status}`
-            );
-
+            throw new Error(`HTTP ${response.status}`);
         }
 
+        const data = await response.json();
 
-        const sensorData =
-            await response.json();
+        updateBackendAlerts(data);
 
-
-        receiveSensorData(sensorData);
-
-
-        console.log(
-            "HAARIS telemetry received:",
-            sensorData
-        );
-
+        // your other telemetry code here
 
     } catch (error) {
+        console.error("Telemetry error:", error);
+    }
+}
 
-        console.error(
-            "HAARIS telemetry error:",
-            error.message
-        );
 
+// ==========================================
+// BACKEND ALERT UPDATE
+// ==========================================
+
+function updateBackendAlerts(data) {
+
+    const alertsStream =
+        document.getElementById("alerts-stream");
+
+    const alertCount =
+        document.getElementById("alert-count-badge");
+
+    const gaugeLabel =
+        document.querySelector("#health-gauge .gauge-label");
+
+    if (!alertsStream) return;
+
+    if (gaugeLabel && data.alert_level) {
+        gaugeLabel.innerText = data.alert_level;
+    }
+
+    let alertClass = "alert-item";
+
+    if (data.alert_level === "WARNING") {
+        alertClass = "alert-item warning";
+    } 
+    else if (data.alert_level === "CRITICAL") {
+        alertClass = "alert-item critical";
+    }
+
+    if (data.alert_message) {
+        alertsStream.innerHTML = `
+            <div class="${alertClass}">
+                <div>
+                    <strong>${data.alert_level}:</strong>
+                    ${data.alert_message}
+                </div>
+
+                <span
+                    class="mono"
+                    style="font-size:0.7rem; color:var(--text-dim);"
+                >
+                    Just now
+                </span>
+            </div>
+        `;
+    }
+
+    if (alertCount) {
+        if (data.alert_level === "NORMAL") {
+            alertCount.innerText = "1 EVENT ACTIVE";
+        } else {
+            alertCount.innerText = "1 ALERT ACTIVE";
+        }
     }
 }
 
@@ -2902,6 +2941,62 @@ function exportCSV() {
     window.URL.revokeObjectURL(url);
 
 }
+</script>
+<script>
+const TELEMETRY_API = "http://127.0.0.1:8000/api/telemetry";
+
+async function updateTelemetryFromBackend() {
+    try {
+        const response = await fetch(TELEMETRY_API);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        updateBackendAlerts(data);
+        
+
+        console.log("LIVE TELEMETRY:", data);
+
+        // Update dashboard elements if they exist
+        const temp = document.getElementById("dash-temp");
+        if (temp && data.temperature != null) {
+            temp.textContent = Number(data.temperature).toFixed(1);
+        }
+
+        const pressure = document.getElementById("dash-press");
+        if (pressure && data.pressure != null) {
+            pressure.textContent = Math.round(data.pressure);
+        }
+
+        const voltage = document.getElementById("dash-volt");
+        if (voltage && data.battery_voltage != null) {
+            voltage.textContent = Number(data.battery_voltage).toFixed(2);
+        }
+
+        const current = document.getElementById("dash-curr");
+        if (current && data.load_current != null) {
+            current.textContent = Number(data.load_current).toFixed(2);
+        }
+
+        const rpm = document.getElementById("dash-rpm");
+        if (rpm && data.rpm != null) {
+            rpm.textContent = Math.round(data.rpm);
+        }
+
+        const health = document.getElementById("dash-health");
+        if (health && data.health != null) {
+            health.textContent = `${Math.round(data.health)}%`;
+        }
+
+    } catch (error) {
+        console.error("Telemetry connection error:", error);
+    }
+}
+
+updateTelemetryFromBackend();
+setInterval(updateTelemetryFromBackend, 5000);
 </script>
 </body>
 </html>
